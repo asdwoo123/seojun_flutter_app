@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:seojun_flutter_app/pages/home.dart';
 import 'package:seojun_flutter_app/photo.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 void main() {
   runApp(MyApp());
@@ -25,7 +29,7 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: HomePage(),
     );
   }
 }
@@ -63,14 +67,26 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _connectHttp() async {
-    /*var message = await http.read(Uri.parse('http://61.101.199.173:3000/data'));
-    print(message);*/
-    fetchPhotos(http.Client());
+    final res = await http.read(Uri.parse('http://192.168.0.48:3000/setting'));
+    final parsed = json.decode(res);
+    final data = parsed['data'];
+    IO.Socket socket = IO.io('http://192.168.0.48:3000', <String, dynamic>{
+      'transports': ['websocket']
+    });
+    data.forEach((node) {
+      socket.on(node['name'], (v) => print('${node['name']}: ${v['data']}'));
+    });
   }
 
   Future<List<Photo>> fetchPhotos(http.Client client) async {
-    final response = await client.get(Uri.parse('https://jsonplaceholder.typicode.com/photos'));
-    return compute(parsePhotos, response.body);
+    final response = await client.get(Uri.parse('http://192.168.0.48:3000/setting'));
+    print(response);
+    // return compute(parsePhotos, response.body);
+  }
+
+  @override
+  void initState() {
+    super.initState();
   }
 
   @override
